@@ -1,139 +1,51 @@
-import React, { Component } from 'react';
-
-import 'ol/ol.css';
-import 'antd/dist/antd.css';
-import './../react-geo.css';
-
-import OlMap from 'ol/Map';
-import OlView from 'ol/View';
-import OlLayerTile from 'ol/layer/Tile';
-import OlSourceOsm from 'ol/source/OSM';
-import {Circle as CircleStyle, Fill, Stroke, Style} from 'ol/style';
-import {Vector as VectorSource} from 'ol/source';
-import Feature from 'ol/Feature';
-import GeoJSON from 'ol/format/GeoJSON';
-import Circle from 'ol/geom/Circle';
-import {Vector as VectorLayer} from 'ol/layer';
-import {fromLonLat} from 'ol/proj.js';
-
+import React, { Component } from 'react'
 import {
-  MapComponent
-} from '@terrestris/react-geo';
+  Map,
+  Marker,
+  Polygon,
+  Popup,
+  TileLayer,
+} from 'react-leaflet'
+import MarkerClusterGroup from 'react-leaflet-markercluster';
 
-const layer = new OlLayerTile({
-  source: new OlSourceOsm()
-});
-
-const center = [ 0, 15 ];
-
-var newMap = [];
-
-const image = new CircleStyle({
-  radius: 6,
-  fill: new Fill({
-    color: '#3399CC'
-  }),
-  stroke: new Stroke({
-    color: '#fff',
-    width: 2
-  })
-});
-
-const styles = {
-  'Point': new Style({
-    image: image
-  })
-};
-
-const styleFunction = function(feature) {
-  return styles[feature.getGeometry().getType()];
-};
-
-const geojsonObject = {
-  'type': 'FeatureCollection',
-  'crs': {
-    'type': 'name',
-    'properties': {
-      'name': 'EPSG:3857'
-    }
-  },
-  'features': newMap,
-};
-
-const vectorSource = new VectorSource({
-  features: (new GeoJSON()).readFeatures(geojsonObject)
-});
-
-vectorSource.addFeature(new Feature(new Circle([5e6, 7e6], 1e6)));
-
-const vectorLayer = new VectorLayer({
-  source: vectorSource,
-  style: styleFunction
-});
-
-// create a new instance of ol.map in ES6 syntax
-const map = new OlMap({
-  view: new OlView({
-    center: center,
-    zoom: 5
-  }),
-  layers: [layer],
-  vectorLayer
-});
-
-map.on('postcompose', map.updateSize);
-
-class MapContainer extends Component {
+export default class TooltipExample extends Component {
   state = {
-    features: null
-  };
-
-  static getDerivedStateFromProps(nextProps, prevState) {
-    console.log('1', nextProps.mapFeatures);
-    if (prevState.features !== nextProps.mapFeatures) {
-      return {
-        features: nextProps.mapFeatures
-      };
-    }
-
-    return prevState.features;
+    clicked: 0,
   }
 
-  componentDidMount() {
-    const { mapFeatures } = this.props;
-
-    console.log('map', this.state.features);
-
-    console.log(mapFeatures, 'myProp');
-
-    if (mapFeatures && mapFeatures.length > 0) {
-      newMap = mapFeatures.reduce((arr, elem) => {
-        return [
-          ...arr, {
-            id: elem.id,
-            type: elem.type,
-            properties: elem.properties,
-            geometry: {
-              type: elem.geometry.type,
-              coordinates: fromLonLat(elem.geometry.coordinates)
-            }
-          }
-        ]
-      }, []);
-    }
+  onClickCircle = () => {
+    this.setState({ clicked: this.state.clicked + 1 })
   }
 
   render() {
-    console.log('2', this.state.features);
+    const clickedText =
+      this.state.clicked === 0
+        ? 'Click this Circle to change the Tooltip text'
+        : `Circle click: ${this.state.clicked}`
+
+    const { mapFeatures } = this.props;
+
     return (
-      <div className="mapBox">
-        <MapComponent
-          map={map}
+      <Map className="markercluster-map" center={[51.0, 19.0]} zoom={4} maxZoom={18}>
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
         />
-      </div>
-    );
+
+        <MarkerClusterGroup>
+          {Array.isArray(mapFeatures) && mapFeatures.length && mapFeatures.map(({ geometry, properties }, index) => (
+            <Marker position={geometry.coordinates} key={index}>
+              <Popup>
+                <div>
+                  <b>{properties.userName}</b>
+                  <p><a href={`mailto:${properties.email}`}>{properties.email}</a></p>
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+        </MarkerClusterGroup>
+
+      </Map>
+    )
   }
 }
-
-export default MapContainer;
-

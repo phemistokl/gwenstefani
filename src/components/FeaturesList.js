@@ -4,7 +4,6 @@ import MapContainer from '../containers/MapContainer';
 const FeaturesList = ({ features }) =>
     <div className="map_container">
         <h2>Features</h2>
-        {/* {console.log('dfdf', features)} */}
         <div className="flex-container">
             <div className="map_box">
                 <MapContainer mapFeatures={features} />

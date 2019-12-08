@@ -8,8 +8,6 @@ class App extends Component {
     componentDidMount() {
         const { onFetchFeatures } = this.props;
 
-        console.log('app');
-
         onFetchFeatures();
     }
     
